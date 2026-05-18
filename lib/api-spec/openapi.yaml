@@ -1,0 +1,823 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: KATALA - Katalog & Reservasi Wisata Lampung API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: destinations
+    description: Tourism destination operations
+  - name: reservations
+    description: Reservation operations
+  - name: tickets
+    description: E-Ticket operations
+  - name: payments
+    description: Payment gateway operations
+  - name: admin
+    description: Admin management operations
+  - name: staff
+    description: Staff ticket validation operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ─── AUTH ───────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          description: Email already exists
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+
+  # ─── DESTINATIONS ────────────────────────────────────────
+  /destinations:
+    get:
+      operationId: listDestinations
+      tags: [destinations]
+      summary: List all destinations
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of destinations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DestinationListResponse"
+    post:
+      operationId: createDestination
+      tags: [admin]
+      summary: Create a destination (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DestinationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Destination"
+
+  /destinations/{id}:
+    get:
+      operationId: getDestination
+      tags: [destinations]
+      summary: Get a destination by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Destination detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Destination"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateDestination
+      tags: [admin]
+      summary: Update a destination (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DestinationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Destination"
+    delete:
+      operationId: deleteDestination
+      tags: [admin]
+      summary: Delete a destination (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /destinations/featured:
+    get:
+      operationId: listFeaturedDestinations
+      tags: [destinations]
+      summary: Get featured destinations for homepage
+      responses:
+        "200":
+          description: Featured destinations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Destination"
+
+  # ─── RESERVATIONS ────────────────────────────────────────
+  /reservations:
+    get:
+      operationId: listMyReservations
+      tags: [reservations]
+      summary: List current user's reservations
+      responses:
+        "200":
+          description: User reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reservation"
+    post:
+      operationId: createReservation
+      tags: [reservations]
+      summary: Create a reservation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReservationInput"
+      responses:
+        "201":
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+        "400":
+          description: Quota exceeded or invalid
+
+  /reservations/{id}:
+    get:
+      operationId: getReservation
+      tags: [reservations]
+      summary: Get reservation by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reservation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Reservation"
+
+  # ─── TICKETS ─────────────────────────────────────────────
+  /tickets:
+    get:
+      operationId: listMyTickets
+      tags: [tickets]
+      summary: List current user's tickets (tiket-saya)
+      responses:
+        "200":
+          description: User tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+
+  /tickets/{id}:
+    get:
+      operationId: getTicket
+      tags: [tickets]
+      summary: Get ticket detail with QR code
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Ticket detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+
+  /tickets/validate:
+    post:
+      operationId: validateTicket
+      tags: [staff]
+      summary: Validate a ticket by QR code (staff)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketValidateInput"
+      responses:
+        "200":
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketValidationResult"
+        "404":
+          description: Ticket not found
+        "400":
+          description: Already used or expired
+
+  # ─── PAYMENTS ────────────────────────────────────────────
+  /payments/create:
+    post:
+      operationId: createPayment
+      tags: [payments]
+      summary: Create Midtrans payment transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentCreateInput"
+      responses:
+        "201":
+          description: Payment snap token created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentResponse"
+
+  /payments/webhook:
+    post:
+      operationId: paymentWebhook
+      tags: [payments]
+      summary: Midtrans payment notification webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookPayload"
+      responses:
+        "200":
+          description: Webhook received
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /payments/{reservationId}/status:
+    get:
+      operationId: getPaymentStatus
+      tags: [payments]
+      summary: Get payment status for a reservation
+      parameters:
+        - name: reservationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  # ─── ADMIN ───────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get dashboard stats (admin)
+      responses:
+        "200":
+          description: Admin statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/transactions:
+    get:
+      operationId: listAllTransactions
+      tags: [admin]
+      summary: List all transactions (admin)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: All transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /admin/reservations:
+    get:
+      operationId: listAllReservations
+      tags: [admin]
+      summary: List all reservations (admin)
+      responses:
+        "200":
+          description: All reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Reservation"
+
+  /admin/revenue:
+    get:
+      operationId: getRevenueChart
+      tags: [admin]
+      summary: Get monthly revenue data for chart
+      responses:
+        "200":
+          description: Monthly revenue chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenuePoint"
+
+  /admin/users:
+    get:
+      operationId: listUsers
+      tags: [admin]
+      summary: List all users (admin)
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    # ─── AUTH ─────────────────────────────────────────────
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        role:
+          type: string
+          enum: [tourist, admin, staff]
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    AuthResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, name, email, role]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [tourist, admin, staff]
+        createdAt:
+          type: string
+
+    # ─── DESTINATIONS ──────────────────────────────────────
+    Destination:
+      type: object
+      required: [id, name, description, location, latitude, longitude, price, dailyQuota, category, imageUrl]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        price:
+          type: number
+        dailyQuota:
+          type: integer
+        category:
+          type: string
+        imageUrl:
+          type: string
+        rating:
+          type: ["number", "null"]
+        featured:
+          type: boolean
+        createdAt:
+          type: string
+
+    DestinationInput:
+      type: object
+      required: [name, description, location, latitude, longitude, price, dailyQuota, category, imageUrl]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        price:
+          type: number
+        dailyQuota:
+          type: integer
+        category:
+          type: string
+        imageUrl:
+          type: string
+        rating:
+          type: ["number", "null"]
+        featured:
+          type: boolean
+
+    DestinationUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        location:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+        price:
+          type: number
+        dailyQuota:
+          type: integer
+        category:
+          type: string
+        imageUrl:
+          type: string
+        rating:
+          type: ["number", "null"]
+        featured:
+          type: boolean
+
+    DestinationListResponse:
+      type: object
+      required: [data, total, page, limit]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Destination"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    # ─── RESERVATIONS ──────────────────────────────────────
+    Reservation:
+      type: object
+      required: [id, userId, destinationId, visitDate, quantity, totalPrice, status]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        destinationId:
+          type: integer
+        visitDate:
+          type: string
+        quantity:
+          type: integer
+        totalPrice:
+          type: number
+        status:
+          type: string
+          enum: [pending, paid, cancelled, expired]
+        destination:
+          $ref: "#/components/schemas/Destination"
+        createdAt:
+          type: string
+
+    ReservationInput:
+      type: object
+      required: [destinationId, visitDate, quantity]
+      properties:
+        destinationId:
+          type: integer
+        visitDate:
+          type: string
+        quantity:
+          type: integer
+
+    # ─── TICKETS ───────────────────────────────────────────
+    Ticket:
+      type: object
+      required: [id, reservationId, ticketCode, qrCodeData, status]
+      properties:
+        id:
+          type: integer
+        reservationId:
+          type: integer
+        ticketCode:
+          type: string
+        qrCodeData:
+          type: string
+        status:
+          type: string
+          enum: [valid, used, expired]
+        usedAt:
+          type: ["string", "null"]
+        reservation:
+          $ref: "#/components/schemas/Reservation"
+        createdAt:
+          type: string
+
+    TicketValidateInput:
+      type: object
+      required: [ticketCode]
+      properties:
+        ticketCode:
+          type: string
+
+    TicketValidationResult:
+      type: object
+      required: [valid, message, ticket]
+      properties:
+        valid:
+          type: boolean
+        message:
+          type: string
+        ticket:
+          $ref: "#/components/schemas/Ticket"
+
+    # ─── PAYMENTS ──────────────────────────────────────────
+    PaymentCreateInput:
+      type: object
+      required: [reservationId]
+      properties:
+        reservationId:
+          type: integer
+
+    PaymentResponse:
+      type: object
+      required: [snapToken, orderId]
+      properties:
+        snapToken:
+          type: string
+        orderId:
+          type: string
+        redirectUrl:
+          type: ["string", "null"]
+
+    Transaction:
+      type: object
+      required: [id, reservationId, orderId, amount, status]
+      properties:
+        id:
+          type: integer
+        reservationId:
+          type: integer
+        orderId:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, paid, failed, expired, refunded]
+        paymentType:
+          type: ["string", "null"]
+        midtransTransactionId:
+          type: ["string", "null"]
+        reservation:
+          $ref: "#/components/schemas/Reservation"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    WebhookPayload:
+      type: object
+      required: [order_id, transaction_status, fraud_status]
+      properties:
+        order_id:
+          type: string
+        transaction_status:
+          type: string
+        fraud_status:
+          type: string
+        payment_type:
+          type: ["string", "null"]
+        transaction_id:
+          type: ["string", "null"]
+        gross_amount:
+          type: ["string", "null"]
+
+    # ─── ADMIN ─────────────────────────────────────────────
+    AdminStats:
+      type: object
+      required: [totalDestinations, totalReservations, totalRevenue, totalUsers, pendingReservations, todayReservations]
+      properties:
+        totalDestinations:
+          type: integer
+        totalReservations:
+          type: integer
+        totalRevenue:
+          type: number
+        totalUsers:
+          type: integer
+        pendingReservations:
+          type: integer
+        todayReservations:
+          type: integer
+
+    RevenuePoint:
+      type: object
+      required: [month, revenue, reservations]
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        reservations:
+          type: integer
