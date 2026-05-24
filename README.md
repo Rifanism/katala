@@ -144,7 +144,7 @@ Frontend tersedia di `http://localhost:5173`, API di `http://localhost:3000`.
 | Role | Akses |
 |---|---|
 | `tourist` | Browsing, reservasi, pembayaran, tiket, rating |
-| `staff` | Scan tiket, lihat statistik |
+| `staff` | Scan tiket |
 | `admin` | Semua akses + kelola destinasi, pengguna, transaksi |
 
 ---
