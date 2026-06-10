@@ -64,7 +64,7 @@ katala/
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/username/katala.git
+git clone https://github.com/Rifanism/katala.git
 cd katala
 ```
 
