@@ -34,7 +34,7 @@ Platform web untuk menjelajahi, memesan, dan mengelola destinasi wisata di Provi
 ## Struktur Project
 
 ```
-Lampung-Tour-Catalog/
+katala/
 ├── artifacts/
 │   ├── api-server/          # Backend Express API
 │   │   └── src/
@@ -64,8 +64,8 @@ Lampung-Tour-Catalog/
 ### 1. Clone repository
 
 ```bash
-git clone https://github.com/username/Lampung-Tour-Catalog.git
-cd Lampung-Tour-Catalog
+git clone https://github.com/username/katala.git
+cd katala
 ```
 
 ### 2. Install dependencies
